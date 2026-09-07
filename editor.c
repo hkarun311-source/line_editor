@@ -166,6 +166,51 @@ void search_document(const Document *doc, const char *query) {
     }
 }
 
+/* Bonus: Find & Replace across the entire document */
+void replace_text(Document *doc, const char *old_str, const char *new_str) {
+    if (doc->head == NULL) {
+        printf("[Document is empty]\n");
+        return;
+    }
+
+    int old_len = strlen(old_str);
+    int new_len = strlen(new_str);
+    int total_replacements = 0;
+    int line_idx = 1;
+
+    LineNode *curr = doc->head;
+    while (curr != NULL) {
+        char *pos = strstr(curr->text, old_str);
+        if (pos != NULL) {
+            /* Create new string with modified length */
+            int curr_len = strlen(curr->text);
+            char *new_text = (char *)malloc(curr_len - old_len + new_len + 1);
+            if (!new_text) return;
+
+            /* Copy prefix, new word, and remainder */
+            int prefix_len = pos - curr->text;
+            strncpy(new_text, curr->text, prefix_len);
+            new_text[prefix_len] = '\0';
+            strcat(new_text, new_str);
+            strcat(new_text, pos + old_len);
+
+            free(curr->text);
+            curr->text = new_text;
+
+            printf("Replaced on line %d.\n", line_idx);
+            total_replacements++;
+        }
+        curr = curr->next;
+        line_idx++;
+    }
+
+    if (total_replacements == 0) {
+        printf("\"%s\" not found in document.\n", old_str);
+    } else {
+        printf("Total replacements: %d\n", total_replacements);
+    }
+}
+
 /* Bonus: Line & Word count */
 void document_stats(const Document *doc) {
     int words = 0;
@@ -192,7 +237,7 @@ int main(void) {
     init_document(&doc);
 
     char cmd_line[MAX_LINE_LEN];
-    printf("Line Editor v1.1 (Type 'h' for help, 'q' to quit)\n");
+    printf("Line Editor v1.2 (Type 'h' for help, 'q' to quit)\n");
 
     while (1) {
         printf("ed> ");
@@ -202,7 +247,8 @@ int main(void) {
         if (strlen(cmd_line) == 0) continue;
 
         char cmd;
-        char arg[MAX_LINE_LEN] = {0};
+        char arg1[MAX_LINE_LEN] = {0};
+        char arg2[MAX_LINE_LEN] = {0};
         int num = 0;
 
         /* Check for search command: / <query> */
@@ -210,6 +256,12 @@ int main(void) {
             char *query = cmd_line + 1;
             while (*query == ' ') query++; /* Skip leading spaces */
             search_document(&doc, query);
+            continue;
+        }
+
+        /* Check for replace command: r <old> <new> */
+        if (sscanf(cmd_line, " r %s %s", arg1, arg2) == 2) {
+            replace_text(&doc, arg1, arg2);
             continue;
         }
 
@@ -229,13 +281,13 @@ int main(void) {
                     printf("Error: Invalid line number %d.\n", num);
                 }
             }
-        } else if (sscanf(cmd_line, " %c %s", &cmd, arg) == 2 && (cmd == 's' || cmd == 'l')) {
+        } else if (sscanf(cmd_line, " %c %s", &cmd, arg1) == 2 && (cmd == 's' || cmd == 'l')) {
             if (cmd == 's') {
-                if (save_file(&doc, arg)) printf("Document saved to %s.\n", arg);
-                else printf("Error: Could not save to %s.\n", arg);
+                if (save_file(&doc, arg1)) printf("Document saved to %s.\n", arg1);
+                else printf("Error: Could not save to %s.\n", arg1);
             } else if (cmd == 'l') {
-                if (load_file(&doc, arg)) printf("Document loaded from %s.\n", arg);
-                else printf("Error: Could not open %s.\n", arg);
+                if (load_file(&doc, arg1)) printf("Document loaded from %s.\n", arg1);
+                else printf("Error: Could not open %s.\n", arg1);
             }
         } else {
             cmd = cmd_line[0];
@@ -248,14 +300,15 @@ int main(void) {
                     break;
                 case 'h':
                     printf("Commands:\n");
-                    printf("  p           Print document\n");
-                    printf("  i <n>       Insert line at position <n>\n");
-                    printf("  d <n>       Delete line <n>\n");
-                    printf("  / <query>   Search for word or phrase\n");
-                    printf("  s <file>    Save to file\n");
-                    printf("  l <file>    Load from file\n");
-                    printf("  w           Print line and word count\n");
-                    printf("  q           Quit\n");
+                    printf("  p             Print document\n");
+                    printf("  i <n>         Insert line at position <n>\n");
+                    printf("  d <n>         Delete line <n>\n");
+                    printf("  / <query>     Search for word or phrase\n");
+                    printf("  r <old> <new> Replace text across document\n");
+                    printf("  s <file>      Save to file\n");
+                    printf("  l <file>      Load from file\n");
+                    printf("  w             Print line and word count\n");
+                    printf("  q             Quit\n");
                     break;
                 case 'q':
                     clear_document(&doc);
