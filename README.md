@@ -3,7 +3,8 @@
 Studio Course 3rd Semester Coding Competition.
 
 ## Team Members
-- Arun H
+- Arun H Kalamuddi
+- Anubhav Tiwari
 
 ## Implemented Features
 - **Insert line (Core):** Inserts text at a specified line index.
